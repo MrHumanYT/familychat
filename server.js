@@ -37,7 +37,7 @@ io.on("connection", (socket) => {
       text: msg.text || "",
       media: msg.media || null,
       mediaType: msg.mediaType || null,
-      time: new Date().toLocaleTimeString().slice(0,5)
+      time: new Date().toLocaleTimeString("ru-RU", { timeZone: "Europe/Moscow", hour: "2-digit", minute: "2-digit" })
     };
 
     messages.push(fullMsg);
