@@ -1,0 +1,83 @@
+* {
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  background:#0f0f12;
+  margin:0;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  color:white;
+}
+
+.login, .chat {
+  width:100%;
+  max-width:420px;
+  height:90vh;
+  background:#1c1c22;
+  border-radius:20px;
+  padding:15px;
+  display:flex;
+  flex-direction:column;
+}
+
+.hidden { display:none; }
+
+#messages {
+  flex:1;
+  overflow-y:auto;
+  margin-bottom:10px;
+}
+
+.message {
+  margin-bottom:12px;
+}
+
+.message .name {
+  font-weight:600;
+}
+
+.message img, .message video {
+  max-width:100%;
+  border-radius:12px;
+  margin-top:5px;
+}
+
+form {
+  display:flex;
+  gap:6px;
+}
+
+input {
+  flex:1;
+  background:#2a2a32;
+  border:none;
+  border-radius:12px;
+  padding:10px;
+  color:white;
+}
+
+button {
+  background:#4f7cff;
+  border:none;
+  border-radius:12px;
+  padding:0 14px;
+  color:white;
+  font-size:18px;
+}
+
+.file-btn {
+  background:#2a2a32;
+  border-radius:12px;
+  padding:0 12px;
+  display:flex;
+  align-items:center;
+  font-size:18px;
+}
+
+.file-btn input {
+  display:none;
+}

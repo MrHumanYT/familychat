@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Chat</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="login" id="login">
+  <h2>👨‍👩‍👧‍👦 Family Chat</h2>
+  <input id="name" placeholder="Имя" required>
+  <input id="code" placeholder="Код доступа" required>
+  <button id="joinBtn">Войти</button>
+</div>
+
+<div class="chat hidden" id="chat">
+  <div id="messages"></div>
+
+  <form id="form">
+    <label class="file-btn">
+      📎
+      <input type="file" id="file" accept="image/*,video/*">
+    </label>
+    <input id="input" placeholder="Сообщение">
+    <button type="submit">➤</button>
+  </form>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
