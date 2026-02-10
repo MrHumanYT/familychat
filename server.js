@@ -1,51 +1,72 @@
 const express = require("express");
 const http = require("http");
-const fs = require("fs");
-const path = require("path");
 const { Server } = require("socket.io");
+const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { maxHttpBufferSize: 1e8 });
 
 const ACCESS_CODE = "2045";
-const messagesPath = path.join(__dirname, "messages.json");
+
+// Подключение к Supabase (Environment Variables на Render)
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
 
 app.use(express.static("public"));
 
-let messages = [];
-if (fs.existsSync(messagesPath)) {
-  messages = JSON.parse(fs.readFileSync(messagesPath));
-}
-
 io.on("connection", (socket) => {
-  socket.on("join", ({ name, code }) => {
-    if (code !== ACCESS_CODE || !name) {
+  // Пользователь пытается войти
+  socket.on("join", async ({ name, code }) => {
+    if (!name || code !== ACCESS_CODE) {
       socket.emit("denied");
       return;
     }
+
     socket.username = name;
-    socket.emit("history", messages);
+
+    // Загружаем всю историю из Supabase
+    const { data } = await supabase
+      .from("messages")
+      .select("*")
+      .order("created_at", { ascending: true });
+
+    socket.emit("history", data || []);
     socket.emit("accepted");
   });
 
-  socket.on("chat message", (msg) => {
+  // Новое сообщение
+  socket.on("chat message", async (msg) => {
     if (!socket.username) return;
 
-    const fullMsg = {
-      user: socket.username,
+    const message = {
+      user_name: socket.username,
       text: msg.text || "",
       media: msg.media || null,
-      mediaType: msg.mediaType || null,
-      time: new Date().toLocaleTimeString("ru-RU", { timeZone: "Europe/Moscow", hour: "2-digit", minute: "2-digit" })
+      media_type: msg.mediaType || null
     };
 
-    messages.push(fullMsg);
-    fs.writeFileSync(messagesPath, JSON.stringify(messages, null, 2));
-    io.emit("chat message", fullMsg);
+    // Сохраняем в Supabase
+    await supabase.from("messages").insert([message]);
+
+    // Отправляем всем пользователям
+    io.emit("chat message", {
+      user: socket.username,
+      text: message.text,
+      media: message.media,
+      mediaType: message.media_type,
+      time: new Date().toLocaleTimeString("ru-RU", {
+        timeZone: "Europe/Moscow",
+        hour: "2-digit",
+        minute: "2-digit"
+      })
+    });
   });
 });
 
+// Запуск сервера
 server.listen(process.env.PORT || 3000, () => {
   console.log("Server started");
 });
