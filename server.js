@@ -9,7 +9,7 @@ const io = new Server(server, { maxHttpBufferSize: 1e8 });
 
 const ACCESS_CODE = "2045";
 
-// Подключение к Supabase (Environment Variables на Render)
+// Подключение к Supabase через Environment Variables
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
@@ -18,7 +18,7 @@ const supabase = createClient(
 app.use(express.static("public"));
 
 io.on("connection", (socket) => {
-  // Пользователь пытается войти
+  // Пользователь заходит
   socket.on("join", async ({ name, code }) => {
     if (!name || code !== ACCESS_CODE) {
       socket.emit("denied");
@@ -27,7 +27,7 @@ io.on("connection", (socket) => {
 
     socket.username = name;
 
-    // Загружаем всю историю из Supabase
+    // Загружаем историю сообщений из Supabase
     const { data } = await supabase
       .from("messages")
       .select("*")
@@ -37,7 +37,7 @@ io.on("connection", (socket) => {
     socket.emit("accepted");
   });
 
-  // Новое сообщение
+  // Пользователь отправляет сообщение
   socket.on("chat message", async (msg) => {
     if (!socket.username) return;
 
@@ -48,12 +48,12 @@ io.on("connection", (socket) => {
       media_type: msg.mediaType || null
     };
 
-    // Сохраняем в Supabase
+    // Сохраняем сообщение в Supabase
     await supabase.from("messages").insert([message]);
 
-    // Отправляем всем пользователям
+    // Отправляем всем клиентам
     io.emit("chat message", {
-      user: socket.username,
+      user: message.user_name,
       text: message.text,
       media: message.media,
       mediaType: message.media_type,
