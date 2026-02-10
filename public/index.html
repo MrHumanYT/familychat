@@ -1,30 +1,32 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Family Chat</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Chat</title>
+  <style>
+    body { background: #1e1e1e; color: #fff; font-family: sans-serif; margin:0; padding:0; display:flex; flex-direction:column; height:100vh;}
+    #messages { flex:1; overflow-y:auto; padding:10px;}
+    .message { margin-bottom:10px;}
+    input, button { padding:5px; margin:5px;}
+    #chatDiv { display:none; flex-direction:column; height:100vh;}
+    img, video { max-width:200px; display:block; margin-top:5px;}
+  </style>
 </head>
 <body>
 
-<div class="login" id="login">
-  <h2>👨‍👩‍👧‍👦 Family Chat</h2>
-  <input id="name" placeholder="Имя" required>
-  <input id="code" placeholder="Код доступа" required>
-  <button id="joinBtn">Войти</button>
+<div id="loginDiv">
+  <input type="text" id="loginName" placeholder="Ваше имя">
+  <input type="password" id="loginCode" placeholder="Код доступа">
+  <button id="loginBtn">Войти</button>
 </div>
 
-<div class="chat hidden" id="chat">
+<div id="chatDiv">
   <div id="messages"></div>
-
   <form id="form">
-    <label class="file-btn">
-      📎
-      <input type="file" id="file" accept="image/*,video/*">
-    </label>
-    <input id="input" placeholder="Сообщение">
-    <button type="submit">➤</button>
+    <input id="input" autocomplete="off" placeholder="Сообщение">
+    <input type="file" id="fileInput">
+    <button>Отправить</button>
   </form>
 </div>
 
