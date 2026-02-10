@@ -4,9 +4,15 @@ const form = document.getElementById("form");
 const input = document.getElementById("input");
 const fileInput = document.getElementById("fileInput");
 
-let username = "";
-const ACCESS_CODE = "2045";
+const loginDiv = document.getElementById("loginDiv");
+const chatDiv = document.getElementById("chatDiv");
+const loginName = document.getElementById("loginName");
+const loginCode = document.getElementById("loginCode");
+const loginBtn = document.getElementById("loginBtn");
 
+let username = "";
+
+// Отображение сообщения
 function addMessage(msg) {
   const div = document.createElement("div");
   div.className = "message";
@@ -25,13 +31,11 @@ function addMessage(msg) {
     if (msg.mediaType.startsWith("image")) {
       const img = document.createElement("img");
       img.src = msg.media;
-      img.style.maxWidth = "200px";
       div.appendChild(img);
     } else if (msg.mediaType.startsWith("video")) {
       const video = document.createElement("video");
       video.src = msg.media;
       video.controls = true;
-      video.style.maxWidth = "200px";
       div.appendChild(video);
     }
   }
@@ -45,20 +49,23 @@ function addMessage(msg) {
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-// Авторизация
-function askUsername() {
-  username = prompt("Введите имя:");
-  const code = prompt("Введите код доступа:");
-  socket.emit("join", { name: username, code });
-}
+// Логин через кнопку
+loginBtn.addEventListener("click", () => {
+  const name = loginName.value.trim();
+  const code = loginCode.value.trim();
+  if (!name || !code) return;
+
+  socket.emit("join", { name, code });
+});
 
 socket.on("denied", () => {
   alert("Неверный код или имя");
-  askUsername();
 });
 
 socket.on("accepted", () => {
-  console.log("Добро пожаловать, " + username);
+  username = loginName.value.trim();
+  loginDiv.style.display = "none";
+  chatDiv.style.display = "flex";
 });
 
 socket.on("history", (msgs) => {
@@ -76,9 +83,7 @@ socket.on("history", (msgs) => {
   }));
 });
 
-socket.on("chat message", (msg) => {
-  addMessage(msg);
-});
+socket.on("chat message", (msg) => addMessage(msg));
 
 // Отправка текста
 form.addEventListener("submit", (e) => {
@@ -104,6 +109,3 @@ fileInput.addEventListener("change", () => {
   reader.readAsDataURL(file);
   fileInput.value = "";
 });
-
-// Старт
-askUsername();
