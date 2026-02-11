@@ -2,10 +2,14 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const { createClient } = require("@supabase/supabase-js");
+const webpush = require("web-push");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { maxHttpBufferSize: 1e8 });
+const io = new Server(server);
+
+app.use(express.json());
+app.use(express.static("public"));
 
 const ACCESS_CODE = "2045";
 
@@ -14,7 +18,19 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-app.use(express.static("public"));
+// === ВСТАВЬ СВОИ КЛЮЧИ ===
+webpush.setVapidDetails(
+  "mailto:test@test.com",
+  process.env.VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
+);
+
+let subscriptions = [];
+
+app.post("/subscribe", (req, res) => {
+  subscriptions.push(req.body);
+  res.status(201).json({});
+});
 
 io.on("connection", (socket) => {
 
@@ -39,20 +55,29 @@ io.on("connection", (socket) => {
   socket.on("chat message", async (msg) => {
     if (!socket.username) return;
 
-    const now = new Date();
-
     const messageData = {
       user_name: socket.username,
       user_color: socket.userColor,
       text: msg.text || null,
       media: msg.media || null,
       media_type: msg.mediaType || null,
-      created_at: now.toISOString()
+      created_at: new Date().toISOString()
     };
 
     await supabase.from("messages").insert([messageData]);
 
     io.emit("chat message", messageData);
+
+    // PUSH ВСЕМ
+    const payload = JSON.stringify({
+      title: messageData.user_name,
+      body: messageData.text || "📎 Медиа"
+    });
+
+    subscriptions.forEach(sub => {
+      webpush.sendNotification(sub, payload)
+        .catch(() => {});
+    });
   });
 
 });
