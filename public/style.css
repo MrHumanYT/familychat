@@ -19,7 +19,7 @@ body {
   width: 250px;
 }
 
-input, select, button {
+input, button {
   padding: 10px;
   border-radius: 8px;
   border: none;
@@ -60,6 +60,7 @@ button {
   display: flex;
   padding: 10px;
   gap: 5px;
+  align-items: center;
 }
 
 #messageInput {
@@ -68,4 +69,5 @@ button {
 
 .fileBtn {
   cursor: pointer;
+  font-size: 20px;
 }
