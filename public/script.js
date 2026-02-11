@@ -2,6 +2,7 @@ const socket = io();
 
 let username = "";
 
+// ===== ЭЛЕМЕНТЫ =====
 const loginDiv = document.getElementById("loginDiv");
 const chatDiv = document.getElementById("chatDiv");
 
@@ -12,9 +13,12 @@ const loginBtn = document.getElementById("loginBtn");
 const messagesDiv = document.getElementById("messages");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
-const fileInput = document.getElementById("fileInput");
 
-// ===== LOGIN =====
+const fileInput = document.getElementById("fileInput");
+const attachBtn = document.getElementById("attachBtn");
+
+
+// ================= LOGIN =================
 
 function tryLogin() {
   const name = loginName.value.trim();
@@ -42,57 +46,60 @@ socket.on("accepted", () => {
   chatDiv.style.display = "flex";
 });
 
-// ===== HISTORY =====
+
+// ================= ИСТОРИЯ =================
 
 socket.on("history", (msgs) => {
   messagesDiv.innerHTML = "";
-  msgs.forEach(m => addMessage(m));
+  msgs.forEach(msg => addMessage(msg));
 });
 
 socket.on("chat message", (msg) => {
   addMessage(msg);
 });
 
-// ===== RENDER MESSAGE =====
 
-function formatDate(dateString) {
-  const date = new Date(dateString);
-
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = String(date.getFullYear()).slice(-2);
-
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-
-  return {
-    date: `${day}.${month}.${year}`,
-    time: `${hours}:${minutes}`
-  };
-}
+// ================= ОТРИСОВКА СООБЩЕНИЯ =================
 
 function addMessage(msg) {
+
+  // Берём дату из БД или текущее время
+  const created = msg.created_at ? new Date(msg.created_at) : new Date();
+
+  const day = String(created.getDate()).padStart(2, "0");
+  const month = String(created.getMonth() + 1).padStart(2, "0");
+  const year = String(created.getFullYear()).slice(-2);
+
+  const hours = String(created.getHours()).padStart(2, "0");
+  const minutes = String(created.getMinutes()).padStart(2, "0");
+
   const div = document.createElement("div");
   div.className = "message";
 
+  // Имя
   const name = document.createElement("b");
-  name.textContent = msg.user || msg.user_name;
+  name.textContent = msg.user_name || msg.user || "User";
   div.appendChild(name);
 
+  // Текст
   if (msg.text) {
     const text = document.createElement("div");
     text.textContent = msg.text;
     div.appendChild(text);
   }
 
+  // Медиа
   if (msg.media) {
-    if (msg.media_type?.startsWith("image") || msg.mediaType?.startsWith("image")) {
+
+    const mediaType = msg.media_type || msg.mediaType || "";
+
+    if (mediaType.startsWith("image")) {
       const img = document.createElement("img");
       img.src = msg.media;
       div.appendChild(img);
     }
 
-    if (msg.media_type?.startsWith("video") || msg.mediaType?.startsWith("video")) {
+    if (mediaType.startsWith("video")) {
       const video = document.createElement("video");
       video.src = msg.media;
       video.controls = true;
@@ -100,26 +107,17 @@ function addMessage(msg) {
     }
   }
 
-  const formatted = formatDate(msg.created_at);
-
-  const dateDiv = document.createElement("div");
-  dateDiv.style.fontSize = "12px";
-  dateDiv.style.opacity = "0.6";
-  dateDiv.textContent = formatted.date;
-
-  const timeDiv = document.createElement("div");
-  timeDiv.style.fontSize = "12px";
-  timeDiv.style.opacity = "0.6";
-  timeDiv.textContent = formatted.time;
-
-  div.appendChild(dateDiv);
-  div.appendChild(timeDiv);
+  // Дата и время
+  const timeBlock = document.createElement("small");
+  timeBlock.textContent = `${day}.${month}.${year} ${hours}:${minutes}`;
+  div.appendChild(timeBlock);
 
   messagesDiv.appendChild(div);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-// ===== SEND TEXT =====
+
+// ================= ОТПРАВКА ТЕКСТА =================
 
 form.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -133,13 +131,23 @@ form.addEventListener("submit", (e) => {
   input.value = "";
 });
 
-// ===== SEND FILE =====
+
+// ================= КНОПКА ПРИКРЕПЛЕНИЯ =================
+
+attachBtn.addEventListener("click", () => {
+  fileInput.click();
+});
+
+
+// ================= ОТПРАВКА ФАЙЛА =================
 
 fileInput.addEventListener("change", () => {
+
   const file = fileInput.files[0];
   if (!file) return;
 
   const reader = new FileReader();
+
   reader.onload = () => {
     socket.emit("chat message", {
       media: reader.result,
@@ -148,4 +156,5 @@ fileInput.addEventListener("change", () => {
   };
 
   reader.readAsDataURL(file);
+  fileInput.value = "";
 });
