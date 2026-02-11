@@ -56,33 +56,23 @@ socket.on("chat message", (msg) => {
   addMessage(msg);
 });
 
-// ================= ФОРМАТИРОВАНИЕ ДАТЫ/ВРЕМЕНИ =================
+// ================= ФОРМАТИРОВАНИЕ ДАТЫ/ВРЕМЕНИ (МОСКВА UTC+3) =================
 
 function formatDateTime(created_at) {
   const date = new Date(created_at);
 
-  // Опции для МСК
-  const options = {
-    timeZone: "Europe/Moscow",
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false
-  };
+  // Москва UTC+3
+  const mskOffset = 3 * 60; // минуты
+  const localOffset = date.getTimezoneOffset(); // минутах
+  const totalOffset = mskOffset + localOffset;
 
-  const formatter = new Intl.DateTimeFormat("ru-RU", options);
-  const parts = formatter.formatToParts(date);
+  const mskDate = new Date(date.getTime() + totalOffset * 60 * 1000);
 
-  let day, month, year, hour, minute;
-  for (const part of parts) {
-    if (part.type === "day") day = part.value;
-    if (part.type === "month") month = part.value;
-    if (part.type === "year") year = part.value;
-    if (part.type === "hour") hour = part.value;
-    if (part.type === "minute") minute = part.value;
-  }
+  const day = String(mskDate.getDate()).padStart(2,"0");
+  const month = String(mskDate.getMonth() + 1).padStart(2,"0");
+  const year = String(mskDate.getFullYear()).slice(-2);
+  const hour = String(mskDate.getHours()).padStart(2,"0");
+  const minute = String(mskDate.getMinutes()).padStart(2,"0");
 
   return {
     date: `${day}.${month}.${year}`,
