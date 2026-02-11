@@ -5,22 +5,12 @@ const chatScreen = document.getElementById("chatScreen");
 
 const nameInput = document.getElementById("nameInput");
 const codeInput = document.getElementById("codeInput");
-const colorSelect = document.getElementById("colorSelect");
 
 const messageInput = document.getElementById("messageInput");
 const messagesDiv = document.getElementById("messages");
 const fileInput = document.getElementById("fileInput");
 
 let username = "";
-let userColor = "#007aff";
-
-window.onload = () => {
-  const savedName = localStorage.getItem("chatName");
-  const savedColor = localStorage.getItem("chatColor");
-
-  if (savedName) nameInput.value = savedName;
-  if (savedColor) colorSelect.value = savedColor;
-};
 
 function tryLogin() {
   const name = nameInput.value.trim();
@@ -29,19 +19,12 @@ function tryLogin() {
   if (!name || !code) return;
 
   username = name;
-  userColor = colorSelect.value;
-
-  socket.emit("join", { name, code, color: userColor });
+  socket.emit("join", { name, code });
 }
 
 socket.on("accepted", () => {
   loginScreen.style.display = "none";
   chatScreen.style.display = "flex";
-
-  localStorage.setItem("chatName", username);
-  localStorage.setItem("chatColor", userColor);
-
-  requestNotificationPermission();
 });
 
 socket.on("denied", () => {
@@ -53,17 +36,7 @@ socket.on("history", (msgs) => {
   msgs.forEach(addMessage);
 });
 
-socket.on("chat message", (msg) => {
-  addMessage(msg);
-
-  if (msg.user_name !== username && document.hidden) {
-    if (Notification.permission === "granted") {
-      new Notification(msg.user_name, {
-        body: msg.text || "📎 Медиа"
-      });
-    }
-  }
-});
+socket.on("chat message", addMessage);
 
 function addMessage(msg) {
   const div = document.createElement("div");
@@ -79,17 +52,16 @@ function addMessage(msg) {
 
   const name = document.createElement("b");
   name.textContent = msg.user_name;
-  name.style.color = msg.user_color;
 
-  const dateSpan = document.createElement("div");
-  dateSpan.className = "date";
-  dateSpan.textContent = date;
+  const dateDiv = document.createElement("div");
+  dateDiv.className = "date";
+  dateDiv.textContent = date;
 
-  const timeSpan = document.createElement("div");
-  timeSpan.className = "time";
-  timeSpan.textContent = time;
+  const timeDiv = document.createElement("div");
+  timeDiv.className = "time";
+  timeDiv.textContent = time;
 
-  div.appendChild(dateSpan);
+  div.appendChild(dateDiv);
   div.appendChild(name);
 
   if (msg.text) {
@@ -99,11 +71,11 @@ function addMessage(msg) {
   }
 
   if (msg.media) {
-    if (msg.media_type.startsWith("image")) {
+    if (msg.media_type && msg.media_type.startsWith("image")) {
       const img = document.createElement("img");
       img.src = msg.media;
       div.appendChild(img);
-    } else {
+    } else if (msg.media_type) {
       const video = document.createElement("video");
       video.src = msg.media;
       video.controls = true;
@@ -111,7 +83,7 @@ function addMessage(msg) {
     }
   }
 
-  div.appendChild(timeSpan);
+  div.appendChild(timeDiv);
   messagesDiv.appendChild(div);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
@@ -140,12 +112,4 @@ function sendMessage() {
 
   messageInput.value = "";
   fileInput.value = "";
-}
-
-function requestNotificationPermission() {
-  if ("Notification" in window) {
-    if (Notification.permission !== "granted") {
-      Notification.requestPermission();
-    }
-  }
 }
