@@ -38,25 +38,18 @@ io.on("connection", (socket) => {
   socket.on("chat message", async (msg) => {
     if (!socket.username) return;
 
-    const now = new Date();
+    const { data } = await supabase
+      .from("messages")
+      .insert([{
+        user_name: socket.username,
+        text: msg.text || "",
+        media: msg.media || null,
+        media_type: msg.mediaType || null
+      }])
+      .select()
+      .single();   // <-- ВАЖНО
 
-    const message = {
-      user_name: socket.username,
-      text: msg.text || "",
-      media: msg.media || null,
-      media_type: msg.mediaType || null,
-      created_at: now.toISOString()
-    };
-
-    await supabase.from("messages").insert([message]);
-
-    io.emit("chat message", {
-      user: message.user_name,
-      text: message.text,
-      media: message.media,
-      mediaType: message.media_type,
-      created_at: message.created_at
-    });
+    io.emit("chat message", data); // отправляем то, что реально записалось в БД
   });
 
 });
