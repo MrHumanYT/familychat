@@ -17,7 +17,6 @@ const input = document.getElementById("input");
 const fileInput = document.getElementById("fileInput");
 const attachBtn = document.getElementById("attachBtn");
 
-
 // ================= LOGIN =================
 
 function tryLogin() {
@@ -46,7 +45,6 @@ socket.on("accepted", () => {
   chatDiv.style.display = "flex";
 });
 
-
 // ================= ИСТОРИЯ =================
 
 socket.on("history", (msgs) => {
@@ -58,21 +56,43 @@ socket.on("chat message", (msg) => {
   addMessage(msg);
 });
 
+// ================= ФОРМАТИРОВАНИЕ ДАТЫ/ВРЕМЕНИ =================
+
+function formatDateTime(created_at) {
+  const date = new Date(created_at);
+
+  // Опции для МСК
+  const options = {
+    timeZone: "Europe/Moscow",
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  };
+
+  const formatter = new Intl.DateTimeFormat("ru-RU", options);
+  const parts = formatter.formatToParts(date);
+
+  let day, month, year, hour, minute;
+  for (const part of parts) {
+    if (part.type === "day") day = part.value;
+    if (part.type === "month") month = part.value;
+    if (part.type === "year") year = part.value;
+    if (part.type === "hour") hour = part.value;
+    if (part.type === "minute") minute = part.value;
+  }
+
+  return {
+    date: `${day}.${month}.${year}`,
+    time: `${hour}:${minute}`
+  };
+}
 
 // ================= ОТРИСОВКА СООБЩЕНИЯ =================
 
 function addMessage(msg) {
-
-  // Берём дату из БД или текущее время
-  const created = msg.created_at ? new Date(msg.created_at) : new Date();
-
-  const day = String(created.getDate()).padStart(2, "0");
-  const month = String(created.getMonth() + 1).padStart(2, "0");
-  const year = String(created.getFullYear()).slice(-2);
-
-  const hours = String(created.getHours()).padStart(2, "0");
-  const minutes = String(created.getMinutes()).padStart(2, "0");
-
   const div = document.createElement("div");
   div.className = "message";
 
@@ -90,7 +110,6 @@ function addMessage(msg) {
 
   // Медиа
   if (msg.media) {
-
     const mediaType = msg.media_type || msg.mediaType || "";
 
     if (mediaType.startsWith("image")) {
@@ -108,14 +127,14 @@ function addMessage(msg) {
   }
 
   // Дата и время
+  const formatted = formatDateTime(msg.created_at || new Date());
   const timeBlock = document.createElement("small");
-  timeBlock.textContent = `${day}.${month}.${year} ${hours}:${minutes}`;
+  timeBlock.textContent = `${formatted.date} ${formatted.time}`;
   div.appendChild(timeBlock);
 
   messagesDiv.appendChild(div);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
-
 
 // ================= ОТПРАВКА ТЕКСТА =================
 
@@ -131,18 +150,15 @@ form.addEventListener("submit", (e) => {
   input.value = "";
 });
 
-
 // ================= КНОПКА ПРИКРЕПЛЕНИЯ =================
 
 attachBtn.addEventListener("click", () => {
   fileInput.click();
 });
 
-
 // ================= ОТПРАВКА ФАЙЛА =================
 
 fileInput.addEventListener("change", () => {
-
   const file = fileInput.files[0];
   if (!file) return;
 
