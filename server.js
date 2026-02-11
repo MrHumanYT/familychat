@@ -1,65 +1,50 @@
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
+const { createClient } = require("@supabase/supabase-js");
 
-let supabase = null;
+// ==== НАСТРОЙКИ ====
+const ACCESS_CODE = "2045";
 
-try {
-  const { createClient } = require("@supabase/supabase-js");
-
-  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
-    supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_KEY
-    );
-    console.log("Supabase connected");
-  } else {
-    console.log("Supabase ENV not found");
-  }
-} catch (err) {
-  console.log("Supabase module not installed");
-}
+const supabase = createClient(
+  process.env.SUPABASE_URL, // Supabase URL
+  process.env.SUPABASE_KEY  // Supabase anon key
+);
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { maxHttpBufferSize: 1e8 });
 
-const ACCESS_CODE = "2045";
-
+// ==== СТАТИЧЕСКИЕ ФАЙЛЫ ====
 app.use(express.static("public"));
 
+// ==== SOCKET.IO ====
 io.on("connection", (socket) => {
 
+  // ==== ПРИСОЕДИНЕНИЕ К ЧАТУ ====
   socket.on("join", async ({ name, code }) => {
-    if (code !== ACCESS_CODE || !name) {
+    if (!name || code !== ACCESS_CODE) {
       socket.emit("denied");
       return;
     }
 
     socket.username = name;
 
-    if (supabase) {
-      try {
-        const { data } = await supabase
-          .from("messages")
-          .select("*")
-          .order("created_at", { ascending: true });
+    // Получаем историю сообщений из Supabase
+    const { data } = await supabase
+      .from("messages")
+      .select("*")
+      .order("created_at", { ascending: true });
 
-        socket.emit("history", data || []);
-      } catch (err) {
-        console.log("History load error:", err.message);
-        socket.emit("history", []);
-      }
-    } else {
-      socket.emit("history", []);
-    }
-
+    socket.emit("history", data || []);
     socket.emit("accepted");
   });
 
+  // ==== НОВОЕ СООБЩЕНИЕ ====
   socket.on("chat message", async (msg) => {
     if (!socket.username) return;
 
+    // Создаём объект сообщения с текущим временем
     const messageData = {
       user_name: socket.username,
       text: msg.text || null,
@@ -68,21 +53,21 @@ io.on("connection", (socket) => {
       created_at: new Date().toISOString()
     };
 
-    if (supabase) {
-      try {
-        await supabase.from("messages").insert([messageData]);
-      } catch (err) {
-        console.log("Insert error:", err.message);
-      }
-    }
+    // Вставляем в Supabase и возвращаем реальный объект
+    const { data, error } = await supabase
+      .from("messages")
+      .insert([messageData])
+      .select();
 
-    io.emit("chat message", messageData);
+    if (!error && data) {
+      io.emit("chat message", data[0]);
+    }
   });
 
 });
 
+// ==== ЗАПУСК СЕРВЕРА ====
 const PORT = process.env.PORT || 3000;
-
 server.listen(PORT, () => {
-  console.log("Server started on port", PORT);
+  console.log(`Server started on port ${PORT}`);
 });
