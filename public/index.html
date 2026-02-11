@@ -85,4 +85,63 @@ body {
 form {
   display:flex;
   padding:10px;
-  background:#1c1
+  background:#1c1c1c;
+}
+
+#input {
+  flex:1;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:#2b2b2b;
+  color:white;
+  margin-right:8px;
+}
+
+#fileInput {
+  color:white;
+  margin-right:8px;
+}
+
+form button {
+  padding:10px 14px;
+  border:none;
+  border-radius:10px;
+  background:#007aff;
+  color:white;
+  font-weight:bold;
+}
+
+img, video {
+  max-width:200px;
+  margin-top:8px;
+  border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="loginDiv">
+  <div class="loginBox">
+    <input type="text" id="loginName" placeholder="Ваше имя">
+    <input type="password" id="loginCode" placeholder="Код доступа">
+    <button id="loginBtn">Войти</button>
+  </div>
+</div>
+
+<div id="chatDiv">
+  <div id="messages"></div>
+
+  <form id="form">
+    <input id="input" autocomplete="off" placeholder="Сообщение">
+    <input type="file" id="fileInput">
+    <button type="submit">Отправить</button>
+  </form>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>
