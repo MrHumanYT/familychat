@@ -3,34 +3,30 @@ const http = require("http");
 const { Server } = require("socket.io");
 const { createClient } = require("@supabase/supabase-js");
 
-// ==== НАСТРОЙКИ ====
-const ACCESS_CODE = "2045";
-
-const supabase = createClient(
-  process.env.SUPABASE_URL, // Supabase URL
-  process.env.SUPABASE_KEY  // Supabase anon key
-);
-
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { maxHttpBufferSize: 1e8 });
 
-// ==== СТАТИЧЕСКИЕ ФАЙЛЫ ====
+const ACCESS_CODE = "2045";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+
 app.use(express.static("public"));
 
-// ==== SOCKET.IO ====
 io.on("connection", (socket) => {
 
-  // ==== ПРИСОЕДИНЕНИЕ К ЧАТУ ====
-  socket.on("join", async ({ name, code }) => {
-    if (!name || code !== ACCESS_CODE) {
+  socket.on("join", async ({ name, code, color }) => {
+    if (code !== ACCESS_CODE || !name) {
       socket.emit("denied");
       return;
     }
 
     socket.username = name;
+    socket.userColor = color || "#007aff";
 
-    // Получаем историю сообщений из Supabase
     const { data } = await supabase
       .from("messages")
       .select("*")
@@ -40,34 +36,27 @@ io.on("connection", (socket) => {
     socket.emit("accepted");
   });
 
-  // ==== НОВОЕ СООБЩЕНИЕ ====
   socket.on("chat message", async (msg) => {
     if (!socket.username) return;
 
-    // Создаём объект сообщения с текущим временем
+    const now = new Date();
+
     const messageData = {
       user_name: socket.username,
+      user_color: socket.userColor,
       text: msg.text || null,
       media: msg.media || null,
       media_type: msg.mediaType || null,
-      created_at: new Date().toISOString()
+      created_at: now.toISOString()
     };
 
-    // Вставляем в Supabase и возвращаем реальный объект
-    const { data, error } = await supabase
-      .from("messages")
-      .insert([messageData])
-      .select();
+    await supabase.from("messages").insert([messageData]);
 
-    if (!error && data) {
-      io.emit("chat message", data[0]);
-    }
+    io.emit("chat message", messageData);
   });
 
 });
 
-// ==== ЗАПУСК СЕРВЕРА ====
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
+server.listen(process.env.PORT || 3000, () => {
+  console.log("Server started");
 });
