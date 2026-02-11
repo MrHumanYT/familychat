@@ -1,36 +1,156 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Family Chat</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Chat</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: linear-gradient(135deg,#1f1f1f,#2c2c2c);
+  color: white;
+}
+
+/* LOGIN */
+
+#loginDiv {
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.loginBox {
+  background:#2b2b2b;
+  padding:30px;
+  border-radius:16px;
+  width:280px;
+  display:flex;
+  flex-direction:column;
+  gap:15px;
+}
+
+.loginBox input {
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  background:#1a1a1a;
+  color:white;
+}
+
+.loginBox button {
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  background:#007aff;
+  color:white;
+  font-weight:bold;
+}
+
+/* CHAT */
+
+#chatDiv {
+  display:none;
+  flex-direction:column;
+  height:100vh;
+}
+
+#messages {
+  flex:1;
+  overflow-y:auto;
+  padding:15px;
+}
+
+.message {
+  margin-bottom:12px;
+  padding:10px;
+  background:#2b2b2b;
+  border-radius:12px;
+  word-wrap:break-word;
+}
+
+.message b {
+  color:#4da3ff;
+}
+
+.message small {
+  display:block;
+  opacity:0.6;
+  font-size:12px;
+  margin-top:5px;
+}
+
+/* INPUT BAR */
+
+form {
+  display:flex;
+  align-items:center;
+  padding:10px;
+  background:#1c1c1c;
+  gap:8px;
+}
+
+.attach-btn,
+.send-btn {
+  width:42px;
+  height:42px;
+  border:none;
+  border-radius:50%;
+  background:#007aff;
+  color:white;
+  font-size:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+#input {
+  flex:1;
+  min-width:0;
+  padding:10px;
+  border:none;
+  border-radius:20px;
+  background:#2b2b2b;
+  color:white;
+}
+
+#fileInput {
+  display:none;
+}
+
+img, video {
+  max-width:200px;
+  margin-top:8px;
+  border-radius:10px;
+}
+</style>
 </head>
+
 <body>
 
-<div id="loginScreen">
+<div id="loginDiv">
   <div class="loginBox">
-    <h2>Family Chat</h2>
-    <input id="nameInput" placeholder="Ваше имя" />
-    <input id="codeInput" type="password" placeholder="Код доступа" />
-    <button onclick="tryLogin()">Войти</button>
+    <input type="text" id="loginName" placeholder="Ваше имя">
+    <input type="password" id="loginCode" placeholder="Код доступа">
+    <button id="loginBtn">Войти</button>
   </div>
 </div>
 
-<div id="chatScreen" style="display:none;">
+<div id="chatDiv">
   <div id="messages"></div>
 
-  <div class="inputArea">
-    <label class="fileBtn">
-      📎
-      <input type="file" id="fileInput" hidden />
-    </label>
-    <input id="messageInput" placeholder="Сообщение..." />
-    <button id="sendBtn">➤</button>
-  </div>
+  <form id="form">
+    <button type="button" class="attach-btn" id="attachBtn">📎</button>
+    <input id="input" autocomplete="off" placeholder="Сообщение">
+    <button type="submit" class="send-btn">➤</button>
+    <input type="file" id="fileInput">
+  </form>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="script.js"></script>
+
 </body>
 </html>
