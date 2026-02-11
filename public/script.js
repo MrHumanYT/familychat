@@ -56,27 +56,24 @@ socket.on("chat message", (msg) => {
   addMessage(msg);
 });
 
-// ================= ФОРМАТИРОВАНИЕ ДАТЫ/ВРЕМЕНИ (МОСКВА) =================
+// ================= ФОРМАТИРОВАНИЕ ДАТЫ/ВРЕМЕНИ (МОСКВА UTC+3) =================
 
 function formatDateTime(created_at) {
-  const date = new Date(created_at);
+  let date = new Date(created_at);
 
-  // Intl.DateTimeFormat автоматически конвертирует в часовой пояс Europe/Moscow
-  const options = {
-    timeZone: "Europe/Moscow",
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false
+  // прибавляем +3 часа для Москвы
+  date.setHours(date.getUTCHours() + 3);
+
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const year = String(date.getUTCFullYear()).slice(-2);
+  const hour = String(date.getUTCHours()).padStart(2, "0");
+  const minute = String(date.getUTCMinutes()).padStart(2, "0");
+
+  return {
+    date: `${day}.${month}.${year}`,
+    time: `${hour}:${minute}`
   };
-
-  const formatted = new Intl.DateTimeFormat("ru-RU", options).format(date);
-
-  // formatted будет типа "ДД.ММ.ГГ, чч:мм"
-  const [datePart, timePart] = formatted.split(", ");
-  return { date: datePart, time: timePart };
 }
 
 // ================= ОТРИСОВКА СООБЩЕНИЯ =================
