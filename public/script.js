@@ -56,28 +56,27 @@ socket.on("chat message", (msg) => {
   addMessage(msg);
 });
 
-// ================= ФОРМАТИРОВАНИЕ ДАТЫ/ВРЕМЕНИ (МОСКВА UTC+3) =================
+// ================= ФОРМАТИРОВАНИЕ ДАТЫ/ВРЕМЕНИ (МОСКВА) =================
 
 function formatDateTime(created_at) {
   const date = new Date(created_at);
 
-  // Москва UTC+3
-  const mskOffset = 3 * 60; // минуты
-  const localOffset = date.getTimezoneOffset(); // минутах
-  const totalOffset = mskOffset + localOffset;
-
-  const mskDate = new Date(date.getTime() + totalOffset * 60 * 1000);
-
-  const day = String(mskDate.getDate()).padStart(2,"0");
-  const month = String(mskDate.getMonth() + 1).padStart(2,"0");
-  const year = String(mskDate.getFullYear()).slice(-2);
-  const hour = String(mskDate.getHours()).padStart(2,"0");
-  const minute = String(mskDate.getMinutes()).padStart(2,"0");
-
-  return {
-    date: `${day}.${month}.${year}`,
-    time: `${hour}:${minute}`
+  // Intl.DateTimeFormat автоматически конвертирует в часовой пояс Europe/Moscow
+  const options = {
+    timeZone: "Europe/Moscow",
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
   };
+
+  const formatted = new Intl.DateTimeFormat("ru-RU", options).format(date);
+
+  // formatted будет типа "ДД.ММ.ГГ, чч:мм"
+  const [datePart, timePart] = formatted.split(", ");
+  return { date: datePart, time: timePart };
 }
 
 // ================= ОТРИСОВКА СООБЩЕНИЯ =================
