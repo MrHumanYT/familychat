@@ -38,11 +38,14 @@ io.on("connection", (socket) => {
   socket.on("chat message", async (msg) => {
     if (!socket.username) return;
 
+    const now = new Date();
+
     const message = {
       user_name: socket.username,
       text: msg.text || "",
       media: msg.media || null,
-      media_type: msg.mediaType || null
+      media_type: msg.mediaType || null,
+      created_at: now.toISOString()
     };
 
     await supabase.from("messages").insert([message]);
@@ -52,11 +55,7 @@ io.on("connection", (socket) => {
       text: message.text,
       media: message.media,
       mediaType: message.media_type,
-      time: new Date().toLocaleTimeString("ru-RU", {
-        timeZone: "Europe/Moscow",
-        hour: "2-digit",
-        minute: "2-digit"
-      })
+      created_at: message.created_at
     });
   });
 
