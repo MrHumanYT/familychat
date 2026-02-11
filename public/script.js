@@ -1,81 +1,107 @@
 const socket = io();
 
-const loginScreen = document.getElementById("loginScreen");
-const chatScreen = document.getElementById("chatScreen");
-
-const nameInput = document.getElementById("nameInput");
-const codeInput = document.getElementById("codeInput");
-
-const messageInput = document.getElementById("messageInput");
-const messagesDiv = document.getElementById("messages");
-const fileInput = document.getElementById("fileInput");
-
 let username = "";
 
+// ===== ЭЛЕМЕНТЫ =====
+const loginDiv = document.getElementById("loginDiv");
+const chatDiv = document.getElementById("chatDiv");
+
+const loginName = document.getElementById("loginName");
+const loginCode = document.getElementById("loginCode");
+const loginBtn = document.getElementById("loginBtn");
+
+const messagesDiv = document.getElementById("messages");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+
+const fileInput = document.getElementById("fileInput");
+const attachBtn = document.getElementById("attachBtn");
+
+// ================= LOGIN =================
+
 function tryLogin() {
-  const name = nameInput.value.trim();
-  const code = codeInput.value.trim();
+  const name = loginName.value.trim();
+  const code = loginCode.value.trim();
 
   if (!name || !code) return;
 
-  username = name;
+  loginBtn.textContent = "Подключение...";
+  loginBtn.disabled = true;
+
   socket.emit("join", { name, code });
 }
 
-socket.on("accepted", () => {
-  loginScreen.style.display = "none";
-  chatScreen.style.display = "flex";
-});
+loginBtn.addEventListener("click", tryLogin);
 
 socket.on("denied", () => {
-  alert("Неверный код!");
+  alert("Неверный код");
+  loginBtn.textContent = "Войти";
+  loginBtn.disabled = false;
 });
+
+socket.on("accepted", () => {
+  username = loginName.value.trim();
+  loginDiv.style.display = "none";
+  chatDiv.style.display = "flex";
+});
+
+// ================= ИСТОРИЯ =================
 
 socket.on("history", (msgs) => {
   messagesDiv.innerHTML = "";
-  msgs.forEach(addMessage);
+  msgs.forEach(msg => addMessage(msg));
 });
 
-socket.on("chat message", addMessage);
+socket.on("chat message", (msg) => {
+  addMessage(msg);
+});
+
+// ================= ФОРМАТИРОВАНИЕ ДАТЫ/ВРЕМЕНИ (МОСКВА +3) =================
+
+function formatDateTime(created_at) {
+  const date = new Date(created_at);
+
+  // прибавляем +3 часа напрямую
+  date.setHours(date.getHours() + 3);
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = String(date.getFullYear()).slice(-2);
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+
+  return { date: `${day}.${month}.${year}`, time: `${hour}:${minute}` };
+}
+
+// ================= ОТРИСОВКА СООБЩЕНИЯ =================
 
 function addMessage(msg) {
   const div = document.createElement("div");
   div.className = "message";
 
-  const dateObj = new Date(msg.created_at);
-
-  const date = dateObj.toLocaleDateString("ru-RU");
-  const time = dateObj.toLocaleTimeString("ru-RU", {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-
+  // Имя
   const name = document.createElement("b");
-  name.textContent = msg.user_name;
-
-  const dateDiv = document.createElement("div");
-  dateDiv.className = "date";
-  dateDiv.textContent = date;
-
-  const timeDiv = document.createElement("div");
-  timeDiv.className = "time";
-  timeDiv.textContent = time;
-
-  div.appendChild(dateDiv);
+  name.textContent = msg.user_name || msg.user || "User";
   div.appendChild(name);
 
+  // Текст
   if (msg.text) {
     const text = document.createElement("div");
     text.textContent = msg.text;
     div.appendChild(text);
   }
 
+  // Медиа
   if (msg.media) {
-    if (msg.media_type && msg.media_type.startsWith("image")) {
+    const mediaType = msg.media_type || msg.mediaType || "";
+
+    if (mediaType.startsWith("image")) {
       const img = document.createElement("img");
       img.src = msg.media;
       div.appendChild(img);
-    } else if (msg.media_type) {
+    }
+
+    if (mediaType.startsWith("video")) {
       const video = document.createElement("video");
       video.src = msg.media;
       video.controls = true;
@@ -83,33 +109,51 @@ function addMessage(msg) {
     }
   }
 
-  div.appendChild(timeDiv);
+  // Дата и время
+  const formatted = formatDateTime(msg.created_at || new Date());
+  const timeBlock = document.createElement("small");
+  timeBlock.textContent = `${formatted.date} ${formatted.time}`;
+  div.appendChild(timeBlock);
+
   messagesDiv.appendChild(div);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-document.getElementById("sendBtn").onclick = sendMessage;
+// ================= ОТПРАВКА ТЕКСТА =================
 
-function sendMessage() {
-  const text = messageInput.value.trim();
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  if (!input.value.trim()) return;
+
+  socket.emit("chat message", {
+    text: input.value.trim()
+  });
+
+  input.value = "";
+});
+
+// ================= КНОПКА ПРИКРЕПЛЕНИЯ =================
+
+attachBtn.addEventListener("click", () => {
+  fileInput.click();
+});
+
+// ================= ОТПРАВКА ФАЙЛА =================
+
+fileInput.addEventListener("change", () => {
   const file = fileInput.files[0];
+  if (!file) return;
 
-  if (!text && !file) return;
+  const reader = new FileReader();
 
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      socket.emit("chat message", {
-        text,
-        media: reader.result,
-        mediaType: file.type
-      });
-    };
-    reader.readAsDataURL(file);
-  } else {
-    socket.emit("chat message", { text });
-  }
+  reader.onload = () => {
+    socket.emit("chat message", {
+      media: reader.result,
+      mediaType: file.type
+    });
+  };
 
-  messageInput.value = "";
+  reader.readAsDataURL(file);
   fileInput.value = "";
-}
+});
