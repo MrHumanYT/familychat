@@ -56,26 +56,21 @@ socket.on("chat message", (msg) => {
   addMessage(msg);
 });
 
-// ================= ФОРМАТИРОВАНИЕ ДАТЫ/ВРЕМЕНИ (МОСКВА) =================
+// ================= ФОРМАТИРОВАНИЕ ДАТЫ/ВРЕМЕНИ (МОСКВА +3) =================
 
 function formatDateTime(created_at) {
   const date = new Date(created_at);
 
-  // Используем toLocaleString с указанием часового пояса
-  const options = {
-    timeZone: "Europe/Moscow",
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false
-  };
+  // прибавляем +3 часа напрямую
+  date.setHours(date.getHours() + 3);
 
-  // возвращает "ДД.ММ.ГГ, чч:мм"
-  const formatted = date.toLocaleString("ru-RU", options);
-  const [datePart, timePart] = formatted.split(", ");
-  return { date: datePart, time: timePart };
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = String(date.getFullYear()).slice(-2);
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+
+  return { date: `${day}.${month}.${year}`, time: `${hour}:${minute}` };
 }
 
 // ================= ОТРИСОВКА СООБЩЕНИЯ =================
